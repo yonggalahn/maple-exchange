@@ -104,29 +104,48 @@ function App() {
     setResult(null)
   }
 
-  // 한글 금액 변환 포맷팅 함수 (예: 10,000,000 -> 1,000만)
+  // 한글 금액 변환 포맷팅 함수 (예: 10,000,000 -> 1,000만, 조/경 단위 지원)
   const formatMesoKorean = (numStr) => {
-    const num = parseInt(numStr || '0', 10)
-    if (num === 0) return '0 메소'
-    
-    const eok = Math.floor(num / 100000000)
-    const man = Math.floor((num % 100000000) / 10000)
-    
-    let resultStr = ''
-    if (eok > 0) resultStr += `${eok}억 `
-    if (man > 0) resultStr += `${man.toLocaleString()}만 `
-    
-    return resultStr.trim() + ' 메소'
+    try {
+      const cleaned = numStr ? numStr.toString().replace(/[^0-9]/g, '') : ''
+      const num = BigInt(cleaned || '0')
+      if (num === 0n) return '0 메소'
+      
+      const gyeong = num / 10000000000000000n
+      const jo = (num % 10000000000000000n) / 1000000000000n
+      const eok = (num % 1000000000000n) / 100000000n
+      const man = (num % 100000000n) / 10000n
+      
+      let resultStr = ''
+      if (gyeong > 0n) resultStr += `${gyeong}경 `
+      if (jo > 0n) resultStr += `${jo}조 `
+      if (eok > 0n) resultStr += `${eok}억 `
+      if (man > 0n) resultStr += `${man}만 `
+      
+      return resultStr.trim() + ' 메소'
+    } catch (err) {
+      return '0 메소'
+    }
   }
 
-  // 만 원 단위 변환 포맷터
+  // 만 원 단위 변환 포맷터 (조/억/만 단위 지원)
   const formatKrwKorean = (krw) => {
-    if (krw >= 100000000) {
-      const eok = (krw / 100000000).toFixed(1)
-      return `${eok}억 원`
+    try {
+      const num = BigInt(krw ? krw.toString().replace(/[^0-9]/g, '') : '0')
+      if (num === 0n) return '0원'
+      
+      const jo = num / 1000000000000n
+      const eok = (num % 1000000000000n) / 100000000n
+      const man = (num % 100000000n) / 10000n
+      
+      let result = ''
+      if (jo > 0n) result += `${jo}조 `
+      if (eok > 0n) result += `${eok}억 `
+      if (man > 0n) result += `${man}만 `
+      return result.trim() + ' 원'
+    } catch (err) {
+      return '0원'
     }
-    const man = Math.floor(krw / 10000)
-    return `${man.toLocaleString()}만 원`
   }
 
   // 시가총액 조/억 원 포맷터 (신설)
