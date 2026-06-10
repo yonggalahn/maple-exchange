@@ -43,6 +43,10 @@ function App() {
   // 갤러리 안전 모드 상태 (기본값 ON)
   const [safeMode, setSafeMode] = useState(true)
   
+  // 유저 직접 시세 지정 상태
+  const [useCustomRate, setUseCustomRate] = useState(false)
+  const [customRate, setCustomRate] = useState(1800)
+  
   // 바이럴 공유 상태관리
   const [copied, setCopied] = useState(false)
   const [communityCopied, setCommunityCopied] = useState(false)
@@ -71,8 +75,19 @@ function App() {
     }
   }, [safeMode])
 
+  // 게임 타입 또는 시황 변경 시 커스텀 단가 기본값으로 동기화
+  useEffect(() => {
+    if (gameType === 'live') {
+      if (marketType === 'city') setCustomRate(1600)
+      else if (marketType === 'rural') setCustomRate(1850)
+      else if (marketType === 'market') setCustomRate(2200)
+    } else {
+      setCustomRate(1800)
+    }
+  }, [gameType, marketType])
+
   // 자산 계산 실행 함수
-  const handleCalculate = async (valueToSubmit, forceGameType, forceMarketType) => {
+  const handleCalculate = async (valueToSubmit, forceGameType, forceMarketType, forceCustomRateFlag, forceCustomRateVal) => {
     setLoading(true)
     setError(null)
     
@@ -80,13 +95,17 @@ function App() {
     const targetGameType = forceGameType || gameType
     const targetMarketType = forceMarketType || marketType
     
+    const isCustom = forceCustomRateFlag !== undefined ? forceCustomRateFlag : useCustomRate
+    const rateVal = forceCustomRateVal !== undefined ? forceCustomRateVal : customRate
+    const customRateParam = isCustom ? `&custom_rate=${rateVal}` : ''
+    
     try {
       let response;
       try {
-        response = await fetch(`/api/exchange?meso=${targetMeso}&game_type=${targetGameType}&market_type=${targetMarketType}`)
+        response = await fetch(`/api/exchange?meso=${targetMeso}&game_type=${targetGameType}&market_type=${targetMarketType}${customRateParam}`)
       } catch (proxyErr) {
         console.warn('Vite 프록시 연결 실패, 백엔드 절대 경로로 재시도합니다.', proxyErr)
-        response = await fetch(`http://localhost:8000/api/exchange?meso=${targetMeso}&game_type=${targetGameType}&market_type=${targetMarketType}`)
+        response = await fetch(`http://localhost:8000/api/exchange?meso=${targetMeso}&game_type=${targetGameType}&market_type=${targetMarketType}${customRateParam}`)
       }
 
       if (!response.ok) {
@@ -106,13 +125,15 @@ function App() {
   // 게임 타입 변경 핸들러
   const handleGameTypeChange = (type) => {
     setGameType(type)
-    handleCalculate(null, type, marketType)
+    setUseCustomRate(false)
+    handleCalculate(null, type, marketType, false)
   }
 
   // 본섭 세부 시황 변경 핸들러
   const handleMarketTypeChange = (type) => {
     setMarketType(type)
-    handleCalculate(null, gameType, type)
+    setUseCustomRate(false)
+    handleCalculate(null, gameType, type, false)
   }
 
   // 초기 로드 시 실행
@@ -725,6 +746,81 @@ function App() {
               >
                 초기화
               </button>
+            </div>
+
+            {/* 시세 커스텀 설정 */}
+            <div className="mt-4 p-4 rounded-xl bg-slate-950/80 border border-slate-850 space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                  ⚙️ {gameType === 'live' ? '1억 메소당 시세 직접 지정' : '1,000만 메소당 시세 직접 지정'}
+                </span>
+                <button
+                  onClick={() => {
+                    const next = !useCustomRate
+                    setUseCustomRate(next)
+                    handleCalculate(null, gameType, marketType, next, customRate)
+                  }}
+                  className={`text-[10px] px-2.5 py-1 rounded-md border transition-all font-semibold ${
+                    useCustomRate 
+                      ? 'bg-orange-500/10 text-orange-400 border-orange-500/30' 
+                      : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-slate-200'
+                  }`}
+                >
+                  {useCustomRate ? '커스텀 시세 적용중' : '기본 시황 시세 사용'}
+                </button>
+              </div>
+
+              {useCustomRate && (
+                <div className="space-y-2.5 animate-fade-in">
+                  <div className="relative flex items-center">
+                    <input
+                      type="text"
+                      value={customRate.toLocaleString()}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value.replace(/[^0-9]/g, '') || '0', 10)
+                        setCustomRate(val)
+                      }}
+                      className="glass-input w-full px-3 py-2 rounded-lg text-sm font-bold font-mono tracking-wide pr-14 text-center"
+                    />
+                    <span className="absolute right-3 font-bold text-[10px] text-slate-500">{safeMode ? 'pt' : '원'}</span>
+                  </div>
+                  
+                  <div className="flex gap-1.5 text-[10px]">
+                    <button
+                      onClick={() => {
+                        const val = Math.max(0, customRate + (gameType === 'live' ? 100 : 50))
+                        setCustomRate(val)
+                        handleCalculate(null, gameType, marketType, true, val)
+                      }}
+                      className="flex-1 py-1 bg-slate-900 hover:bg-slate-800 text-slate-300 rounded border border-slate-800 transition-colors"
+                    >
+                      +{gameType === 'live' ? '100' : '50'}{safeMode ? 'pt' : '원'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        const val = Math.max(0, customRate - (gameType === 'live' ? 100 : 50))
+                        setCustomRate(val)
+                        handleCalculate(null, gameType, marketType, true, val)
+                      }}
+                      className="flex-1 py-1 bg-slate-900 hover:bg-slate-850 text-slate-400 rounded border border-slate-800 transition-colors"
+                    >
+                      -{gameType === 'live' ? '100' : '50'}{safeMode ? 'pt' : '원'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        const defaultVal = gameType === 'live' 
+                          ? (marketType === 'city' ? 1600 : marketType === 'rural' ? 1850 : 2200) 
+                          : 1800
+                        setCustomRate(defaultVal)
+                        handleCalculate(null, gameType, marketType, true, defaultVal)
+                      }}
+                      className="px-2 py-1 bg-slate-950 hover:bg-slate-900 text-slate-550 rounded border border-slate-850 transition-colors"
+                    >
+                      기본값
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* 계산 실행 버튼 */}

@@ -433,22 +433,30 @@ def read_root():
 def exchange_meso_get(
     meso: int = Query(..., description="환전할 메소 금액"),
     game_type: str = Query("mapleland", description="게임 종류 (mapleland 또는 live)"),
-    market_type: str = Query("city", description="본섭 시세 기준 (city, rural, market)")
+    market_type: str = Query("city", description="본섭 시세 기준 (city, rural, market)"),
+    custom_rate: int = Query(None, description="유저 커스텀 시세 환산가 (0 또는 None일 시 기본 시황 적용)")
 ):
     if meso < 0:
         raise HTTPException(status_code=400, detail="메소는 음수일 수 없습니다.")
     
     # 1. 원화 환산
-    if game_type == "live":
-        if market_type == "rural":
-            rate = LIVE_RATE_RURAL
-        elif market_type == "market":
-            rate = LIVE_RATE_MARKET
+    if custom_rate and custom_rate > 0:
+        rate = custom_rate
+        if game_type == "live":
+            krw = int((meso / LIVE_RATE_UNIT) * rate)
         else:
-            rate = LIVE_RATE_CITY
-        krw = int((meso / LIVE_RATE_UNIT) * rate)
+            krw = int((meso / MESO_RATE_UNIT) * rate)
     else:
-        krw = int((meso / MESO_RATE_UNIT) * KRW_RATE_UNIT)
+        if game_type == "live":
+            if market_type == "rural":
+                rate = LIVE_RATE_RURAL
+            elif market_type == "market":
+                rate = LIVE_RATE_MARKET
+            else:
+                rate = LIVE_RATE_CITY
+            krw = int((meso / LIVE_RATE_UNIT) * rate)
+        else:
+            krw = int((meso / MESO_RATE_UNIT) * KRW_RATE_UNIT)
     
     # 2. 실시간 주식 TOP 3 수집 및 환산 (시가총액순)
     raw_stocks = get_top_3_stocks()
@@ -534,7 +542,8 @@ class ExchangeRequest(BaseModel):
     meso: int
     game_type: str = "mapleland"
     market_type: str = "city"
+    custom_rate: int = None
 
 @app.post("/api/exchange", response_model=ExchangeResponse)
 def exchange_meso_post(request: ExchangeRequest):
-    return exchange_meso_get(request.meso, request.game_type, request.market_type)
+    return exchange_meso_get(request.meso, request.game_type, request.market_type, request.custom_rate)
