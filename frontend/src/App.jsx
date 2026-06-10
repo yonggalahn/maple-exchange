@@ -15,6 +15,7 @@ import {
   Car
 } from 'lucide-react'
 import html2canvas from 'html2canvas'
+import { Analytics } from '@vercel/analytics/react'
 
 // 카카오 Javascript 앱 키 (Vite 환경 변수 연동, 미등록 시 가상 키 활용 폴백 작동)
 const KAKAO_JS_KEY = import.meta.env.VITE_KAKAO_JS_KEY || 'YOUR_KAKAO_JS_KEY'
@@ -505,6 +506,7 @@ function App() {
 
   return (
     <div className="relative min-h-screen grid-overlay flex flex-col justify-between">
+      <Analytics />
       
       {/* 백그라운드 네온 빛 효과 */}
       <div className="absolute top-1/4 left-1/4 -translate-x-1/2 -translate-y-1/2 w-72 md:w-96 h-72 md:h-96 bg-maple-500/10 rounded-full blur-[100px] md:blur-[120px] pointer-events-none"></div>
