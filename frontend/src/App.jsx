@@ -18,7 +18,8 @@ import html2canvas from 'html2canvas'
 
 // 카카오 Javascript 앱 키 (Vite 환경 변수 연동, 미등록 시 가상 키 활용 폴백 작동)
 const KAKAO_JS_KEY = import.meta.env.VITE_KAKAO_JS_KEY || 'YOUR_KAKAO_JS_KEY'
-const VITE_TOSS_ID = import.meta.env.VITE_TOSS_ID || ''
+const DONATION_INFO = import.meta.env.VITE_DONATION_INFO || '카카오뱅크 3333-01-2345678 (예시)'
+const SPONSOR_CONTACT = import.meta.env.VITE_SPONSOR_CONTACT || 'yongwook.ahn@gmail.com'
 
 function App() {
   const [mesoInput, setMesoInput] = useState('100000000') // 기본 1억 메소
@@ -36,6 +37,7 @@ function App() {
   // 바이럴 공유 상태관리
   const [copied, setCopied] = useState(false)
   const [communityCopied, setCommunityCopied] = useState(false)
+  const [donationCopied, setDonationCopied] = useState(false)
   const [kakaoShared, setKakaoShared] = useState(false)
   const [savingReceipt, setSavingReceipt] = useState(false)
   const [kakaoCopiedText, setKakaoCopiedText] = useState('')
@@ -399,6 +401,13 @@ function App() {
     setTimeout(() => setCommunityCopied(false), 2000)
   }
 
+  // 후원 계좌 복사
+  const handleCopyDonation = () => {
+    navigator.clipboard.writeText(DONATION_INFO)
+    setDonationCopied(true)
+    setTimeout(() => setDonationCopied(false), 2000)
+  }
+
   return (
     <div className="relative min-h-screen grid-overlay flex flex-col justify-between">
       
@@ -548,7 +557,7 @@ function App() {
             </div>
           </div>
           <a 
-            href={`https://toss.me/${VITE_TOSS_ID || 'yonggalahn'}`} 
+            href={SPONSOR_CONTACT.startsWith('http') ? SPONSOR_CONTACT : `mailto:${SPONSOR_CONTACT}`} 
             target="_blank" 
             rel="noopener noreferrer" 
             className="text-[10px] text-slate-400 hover:text-white transition-colors border border-slate-700 hover:border-slate-500 px-3 py-1 rounded bg-slate-900/40"
@@ -894,18 +903,25 @@ function App() {
                     <span className="text-[9px] bg-maple-500/10 text-maple-400 border border-maple-500/20 px-1.5 py-0.2 rounded">쌀먹 지원</span>
                   </h4>
                   <p className="text-[10px] md:text-xs text-slate-450 mt-1 leading-relaxed">
-                    재미있게 사용하셨나요? 커피 한 잔 후원으로 서버 유지비와 물약값 쌀먹을 도와주세요!
+                    재미있게 사용하셨나요? 계좌번호를 클릭해 복사한 후 토스/카카오톡 송금으로 서버 유지비를 후원하실 수 있습니다.
                   </p>
                 </div>
               </div>
-              <a
-                href={VITE_TOSS_ID ? `https://toss.me/${VITE_TOSS_ID}` : 'https://toss.me/yonggalahn'}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full md:w-auto px-5 py-2.5 bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 text-white font-bold rounded-xl transition-all text-center text-xs md:text-sm shadow-md active:scale-98 flex items-center justify-center gap-1.5"
+              <button
+                onClick={handleCopyDonation}
+                className="w-full md:w-auto px-5 py-2.5 bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 text-white font-bold rounded-xl transition-all text-center text-xs md:text-sm shadow-md active:scale-98 flex items-center justify-center gap-1.5 whitespace-nowrap"
               >
-                🍁 토스로 물약값 후원하기 &rarr;
-              </a>
+                {donationCopied ? (
+                  <>
+                    <Check size={16} className="text-green-300" />
+                    계좌 복사 완료!
+                  </>
+                ) : (
+                  <>
+                    🍁 후원 계좌 복사하기 &rarr;
+                  </>
+                )}
+              </button>
             </div>
 
           </div>
@@ -922,7 +938,7 @@ function App() {
             </p>
           </div>
           <a 
-            href={`https://toss.me/${VITE_TOSS_ID || 'yonggalahn'}`}
+            href={SPONSOR_CONTACT.startsWith('http') ? SPONSOR_CONTACT : `mailto:${SPONSOR_CONTACT}`}
             target="_blank"
             rel="noopener noreferrer"
             className="text-[9px] text-orange-400 hover:text-orange-300 font-semibold border border-orange-500/30 hover:border-orange-500/60 rounded px-2.5 py-1 transition-all"
