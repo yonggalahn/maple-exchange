@@ -158,9 +158,11 @@ def get_top_3_coins() -> list[dict]:
 MESO_RATE_UNIT = 10000000
 KRW_RATE_UNIT = 1800
 
-# 환율 매핑 정보 (라이브 본섭: 1억 메소 = 2,200원)
+# 환율 매핑 정보 (라이브 본섭: 1억 메소 기준)
 LIVE_RATE_UNIT = 100000000
-LIVE_KRW_RATE_UNIT = 2200
+LIVE_RATE_CITY = 1600     # 주요 도시 서버 (스카니아 등) 평균 1,600원
+LIVE_RATE_RURAL = 1850    # 외곽 서버 (노바 등) 평균 1,850원
+LIVE_RATE_MARKET = 2200   # 공식 메소마켓 환산가 2,200원
 
 # ==========================================
 # [3] 부동산 및 자동차 스펙 데이터
@@ -409,15 +411,22 @@ def read_root():
 
 @app.get("/api/exchange")
 def exchange_meso_get(
-    meso: int = Query(..., description="환전할 메이플랜드 메소 금액"),
-    game_type: str = Query("mapleland", description="게임 종류 (mapleland 또는 live)")
+    meso: int = Query(..., description="환전할 메소 금액"),
+    game_type: str = Query("mapleland", description="게임 종류 (mapleland 또는 live)"),
+    market_type: str = Query("city", description="본섭 시세 기준 (city, rural, market)")
 ):
     if meso < 0:
         raise HTTPException(status_code=400, detail="메소는 음수일 수 없습니다.")
     
     # 1. 원화 환산
     if game_type == "live":
-        krw = int((meso / LIVE_RATE_UNIT) * LIVE_KRW_RATE_UNIT)
+        if market_type == "rural":
+            rate = LIVE_RATE_RURAL
+        elif market_type == "market":
+            rate = LIVE_RATE_MARKET
+        else:
+            rate = LIVE_RATE_CITY
+        krw = int((meso / LIVE_RATE_UNIT) * rate)
     else:
         krw = int((meso / MESO_RATE_UNIT) * KRW_RATE_UNIT)
     
@@ -504,7 +513,8 @@ def exchange_meso_get(
 class ExchangeRequest(BaseModel):
     meso: int
     game_type: str = "mapleland"
+    market_type: str = "city"
 
 @app.post("/api/exchange", response_model=ExchangeResponse)
 def exchange_meso_post(request: ExchangeRequest):
-    return exchange_meso_get(request.meso, request.game_type)
+    return exchange_meso_get(request.meso, request.game_type, request.market_type)

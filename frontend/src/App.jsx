@@ -37,6 +37,9 @@ function App() {
   // 게임 버전 선택 상태관리 ('mapleland' | 'live')
   const [gameType, setGameType] = useState('mapleland')
   
+  // 본섭 세부 시황 선택 상태관리 ('city' | 'rural' | 'market')
+  const [marketType, setMarketType] = useState('city')
+  
   // 바이럴 공유 상태관리
   const [copied, setCopied] = useState(false)
   const [communityCopied, setCommunityCopied] = useState(false)
@@ -57,20 +60,21 @@ function App() {
   }, [])
 
   // 자산 계산 실행 함수
-  const handleCalculate = async (valueToSubmit, forceGameType) => {
+  const handleCalculate = async (valueToSubmit, forceGameType, forceMarketType) => {
     setLoading(true)
     setError(null)
     
     const targetMeso = valueToSubmit || mesoInput
     const targetGameType = forceGameType || gameType
+    const targetMarketType = forceMarketType || marketType
     
     try {
       let response;
       try {
-        response = await fetch(`/api/exchange?meso=${targetMeso}&game_type=${targetGameType}`)
+        response = await fetch(`/api/exchange?meso=${targetMeso}&game_type=${targetGameType}&market_type=${targetMarketType}`)
       } catch (proxyErr) {
         console.warn('Vite 프록시 연결 실패, 백엔드 절대 경로로 재시도합니다.', proxyErr)
-        response = await fetch(`http://localhost:8000/api/exchange?meso=${targetMeso}&game_type=${targetGameType}`)
+        response = await fetch(`http://localhost:8000/api/exchange?meso=${targetMeso}&game_type=${targetGameType}&market_type=${targetMarketType}`)
       }
 
       if (!response.ok) {
@@ -90,12 +94,18 @@ function App() {
   // 게임 타입 변경 핸들러
   const handleGameTypeChange = (type) => {
     setGameType(type)
-    handleCalculate(null, type)
+    handleCalculate(null, type, marketType)
+  }
+
+  // 본섭 세부 시황 변경 핸들러
+  const handleMarketTypeChange = (type) => {
+    setMarketType(type)
+    handleCalculate(null, gameType, type)
   }
 
   // 초기 로드 시 실행
   useEffect(() => {
-    handleCalculate('100000000', 'mapleland')
+    handleCalculate('100000000', 'mapleland', 'city')
   }, [])
 
   // 메소 입력 포맷팅
@@ -389,7 +399,13 @@ function App() {
     const aptDetail = result.apartments[activeAptTab]
     const carDetail = result.cars[activeCarTab]
     
-    const text = `🍁 방구석 자산 환전소 영수증 인증 (${gameType === 'live' ? '메이플 본섭' : '메이플랜드'}) 🍁
+    const getMarketName = (mType) => {
+      if (mType === 'rural') return '외곽 서버 시황'
+      if (mType === 'market') return '메소마켓 시황'
+      return '도시 서버 시황'
+    }
+    
+    const text = `🍁 방구석 자산 환전소 영수증 인증 (${gameType === 'live' ? `메이플 본섭 - ${getMarketName(marketType)}` : '메이플랜드'}) 🍁
 
 💰 보유 메소: ${formatMesoKorean(result.meso)}
 💵 현실 원화 환산 가치: ₩${result.krw.toLocaleString()}원
@@ -532,6 +548,41 @@ function App() {
               />
               <span className="absolute right-4 font-bold text-xs md:text-sm text-slate-400">MESO</span>
             </div>
+
+            {/* 본섭 시황 기준 선택 (게임이 본섭일 때만 드러남) */}
+            {gameType === 'live' && (
+              <div className="mt-2.5">
+                <label className="text-[10px] text-slate-400 font-semibold mb-1 block">
+                  시황 기준 선택
+                </label>
+                <div className="flex bg-slate-950 p-0.5 rounded-lg border border-slate-800 text-[10px]">
+                  <button
+                    onClick={() => handleMarketTypeChange('city')}
+                    className={`flex-1 py-1.5 font-bold rounded transition-all flex items-center justify-center gap-1 ${
+                      marketType === 'city' ? 'text-white bg-slate-800 border border-slate-700' : 'text-slate-500 hover:text-slate-300'
+                    }`}
+                  >
+                    🏙️ 도시 서버 (1,600원)
+                  </button>
+                  <button
+                    onClick={() => handleMarketTypeChange('rural')}
+                    className={`flex-1 py-1.5 font-bold rounded transition-all flex items-center justify-center gap-1 ${
+                      marketType === 'rural' ? 'text-white bg-slate-800 border border-slate-700' : 'text-slate-500 hover:text-slate-300'
+                    }`}
+                  >
+                    🏞️ 외곽 서버 (1,850원)
+                  </button>
+                  <button
+                    onClick={() => handleMarketTypeChange('market')}
+                    className={`flex-1 py-1.5 font-bold rounded transition-all flex items-center justify-center gap-1 ${
+                      marketType === 'market' ? 'text-white bg-slate-800 border border-slate-700' : 'text-slate-500 hover:text-slate-300'
+                    }`}
+                  >
+                    💳 메소마켓 (2,200원)
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* 빠른 입력 단추 */}
             <div className="flex flex-wrap gap-1.5 text-xs">
