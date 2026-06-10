@@ -40,6 +40,9 @@ function App() {
   // 본섭 세부 시황 선택 상태관리 ('city' | 'rural' | 'market')
   const [marketType, setMarketType] = useState('city')
   
+  // 갤러리 안전 모드 상태 (기본값 ON)
+  const [safeMode, setSafeMode] = useState(true)
+  
   // 바이럴 공유 상태관리
   const [copied, setCopied] = useState(false)
   const [communityCopied, setCommunityCopied] = useState(false)
@@ -58,6 +61,15 @@ function App() {
       }
     }
   }, [])
+
+  // 안전 모드 변경 시 document.title 업데이트
+  useEffect(() => {
+    if (safeMode) {
+      document.title = "방구석 자산 등기소 - 메이플 실시간 메소 지수 측정기"
+    } else {
+      document.title = "방구석 자산 환전소 - 메이플랜드 메소 실시간 환율 계산기"
+    }
+  }, [safeMode])
 
   // 자산 계산 실행 함수
   const handleCalculate = async (valueToSubmit, forceGameType, forceMarketType) => {
@@ -154,7 +166,7 @@ function App() {
   const formatKrwKorean = (krw) => {
     try {
       const num = BigInt(krw ? krw.toString().replace(/[^0-9]/g, '') : '0')
-      if (num === 0n) return '0원'
+      if (num === 0n) return safeMode ? '0 pt' : '0원'
       
       const jo = num / 1000000000000n
       const eok = (num % 1000000000000n) / 100000000n
@@ -164,9 +176,9 @@ function App() {
       if (jo > 0n) result += `${jo}조 `
       if (eok > 0n) result += `${eok}억 `
       if (man > 0n) result += `${man}만 `
-      return result.trim() + ' 원'
+      return result.trim() + (safeMode ? ' pt' : ' 원')
     } catch (err) {
-      return '0원'
+      return safeMode ? '0 pt' : '0원'
     }
   }
 
@@ -178,7 +190,7 @@ function App() {
     let result = ''
     if (jo > 0) result += `${jo}조 `
     if (eok > 0) result += `${eok.toLocaleString()}억 `
-    return result.trim() + ' 원'
+    return result.trim() + (safeMode ? ' pt' : ' 원')
   }
 
   // 아파트 평수 시뮬레이터 렌더러
@@ -285,7 +297,9 @@ function App() {
       const image = canvas.toDataURL('image/png')
       const link = document.createElement('a')
       link.href = image
-      link.download = `maple-exchange-receipt-${result.meso}meso.png`
+      link.download = safeMode 
+        ? `maple-exchange-registry-${result.meso}meso.png` 
+        : `maple-exchange-receipt-${result.meso}meso.png`
       link.click()
     } catch (err) {
       console.error('영수증 다운로드 실패', err)
@@ -311,7 +325,24 @@ function App() {
     const carComment = data.cars[carTab].comment
     const tierName = data.tier_name
     
-    const templates = [
+    const templates = safeMode ? [
+      {
+        title: `[📢 빅토리아 아일랜드 긴급 속보]`,
+        description: `메소 등기소 충격 보고! ${userName}님이 보유 메소를 현실 금융 시장 지수로 환산한 결과, [${aptComment} / ${carComment}]에 성공했습니다! 방구석 자산 등급: [${tierName}]`
+      },
+      {
+        title: `[🚨 대박 사건 목격!]`,
+        description: `메이플랜드 광업으로 무려 [${carName}] 부품과 [${aptName}] 등기를 지배하는 신흥 자산가 등장! 방구석 자산 등급: [${tierName}]`
+      },
+      {
+        title: `[🚗 본격 현실 등기 및 출고 인증]`,
+        description: `피땀 깃든 메소 등기 완료! ${carComment}에 도달하고 내 땅 내 집 마련에 성공했습니다. 당신의 자산 등급은?`
+      },
+      {
+        title: `[🔥 메이플랜드 만수르 강림]`,
+        description: `이재용 회장님도 뒷걸음질 칠 메이플 황제 등장! ${aptComment}을 달성하고 호화 라이프 조립 중!`
+      }
+    ] : [
       {
         title: `[📢 빅토리아 아일랜드 긴급 속보]`,
         description: `메소 환전소 충격 보고! ${userName}님이 보유 메소를 현실 금융 시장에 환전한 결과, [${aptComment} / ${carComment}]에 성공했습니다! 방구석 자산 등급: [${tierName}]`
@@ -357,7 +388,7 @@ function App() {
           },
           buttons: [
             {
-              title: '나도 메소 환전해보기',
+              title: safeMode ? '나도 메소 등기해보기' : '나도 메소 환전해보기',
               link: {
                 mobileWebUrl: pageUrl,
                 webUrl: pageUrl,
@@ -378,7 +409,9 @@ function App() {
       }
     }
     
-    const viralText = `${msg.title}\n\n${msg.description}\n\n👉 나도 방구석 자산 환전하러 가기: ${pageUrl}`
+    const viralText = safeMode 
+      ? `${msg.title}\n\n${msg.description}\n\n👉 나도 방구석 자산 등기하러 가기: ${pageUrl}`
+      : `${msg.title}\n\n${msg.description}\n\n👉 나도 방구석 자산 환전하러 가기: ${pageUrl}`
     navigator.clipboard.writeText(viralText)
     
     setKakaoCopiedText(viralText)
@@ -405,10 +438,10 @@ function App() {
       return '도시 서버 시황'
     }
     
-    const text = `🍁 방구석 자산 모의 등기소 인증 (${gameType === 'live' ? `메이플 본섭 - ${getMarketName(marketType)}` : '메이플랜드'}) 🍁
+    const text = safeMode ? `🍁 방구석 자산 모의 등기소 인증 (${gameType === 'live' ? `메이플 본섭 - ${getMarketName(marketType)}` : '메이플랜드'}) 🍁
 
 💰 보유 메소: ${formatMesoKorean(result.meso)}
-💵 모의 현실 환산 지수: ${result.krw.toLocaleString()}pt
+💵 모의 현실 환산 지수: ${result.krw.toLocaleString()} pt
 🎖️ 방구석 자산 등급: [${result.tier_name}]
 
 🏢 부동산 (${aptDetail.name}):
@@ -420,7 +453,22 @@ function App() {
 👉 상태: ${carDetail.comment}
 
 🍜 보너스: 평생 짜장면 ${formatNumber(result.jajangmyeon_qty)}그릇 섭취 지수 도달!
-👉 나도 방구석 등기 치러 가기: ${pageUrl}`
+👉 나도 방구석 등기 치러 가기: ${pageUrl}` : `🍁 방구석 자산 환전소 인증 (${gameType === 'live' ? `메이플 본섭 - ${getMarketName(marketType)}` : '메이플랜드'}) 🍁
+
+💰 보유 메소: ${formatMesoKorean(result.meso)}
+💵 현실 원화 환산 가치: ₩${result.krw.toLocaleString()}원
+🎖️ 방구석 자산 등급: [${result.tier_name}]
+
+🏢 부동산 (${aptDetail.name}):
+👉 소유 면적: ${aptDetail.pyeong}평 (${aptDetail.m2}㎡)
+👉 상태: ${aptDetail.comment}
+
+🚗 자동차 (${carDetail.name}):
+👉 획득 상태: ${carDetail.qty}대 분량
+👉 상태: ${carDetail.comment}
+
+🍜 보너스: 평생 짜장면 ${formatNumber(result.jajangmyeon_qty)}그릇 섭취 지수 도달!
+👉 나도 방구석 자산 환전하러 가기: ${pageUrl}`
 
     navigator.clipboard.writeText(text)
     setCommunityCopied(true)
@@ -448,9 +496,11 @@ function App() {
             <span className="text-2xl md:text-3xl leaf-float-animation">🍁</span>
             <div>
               <h1 className="text-xl md:text-2xl font-bold tracking-tight bg-gradient-to-r from-maple-400 via-orange-400 to-amber-300 bg-clip-text text-transparent">
-                방구석 자산 환전소
+                {safeMode ? '방구석 자산 등기소' : '방구석 자산 환전소'}
               </h1>
-              <p className="text-[8px] md:text-xs text-slate-400">Mapleland Live Financial Converter</p>
+              <p className="text-[8px] md:text-xs text-slate-400">
+                {safeMode ? 'Mapleland Live Financial Index Simulator' : 'Mapleland Live Financial Converter'}
+              </p>
             </div>
           </div>
           
@@ -469,11 +519,39 @@ function App() {
         {/* 오프닝 타이틀 */}
         <div className="text-center space-y-2">
           <h2 className="text-2xl md:text-4xl font-extrabold text-white tracking-tight leading-snug">
-            내 메소는 <span className="text-maple-400 underline decoration-wavy decoration-orange-500 underline-offset-4">진짜 금융 시장</span>에서 얼마일까?
+            내 메소는 <span className="text-maple-400 underline decoration-wavy decoration-orange-500 underline-offset-4">{safeMode ? '진짜 금융 시장 기준' : '진짜 금융 시장'}</span>에서 {safeMode ? '몇 pt의 가치일까?' : '얼마일까?'}
           </h2>
           <p className="text-xs md:text-sm text-slate-300 max-w-md mx-auto leading-relaxed">
-            실시간 주식/코인의 '국내 시가총액 TOP 3' 랭킹 파이프라인과 국토부 실거래 부동산을 결합한 핀테크 환전소입니다.
+            실시간 주식/코인의 '국내 시가총액 TOP 3' 랭킹 파이프라인과 국토부 실거래 부동산을 결합한 {safeMode ? '자산 지수 평가소입니다.' : '핀테크 환전소입니다.'}
           </p>
+        </div>
+
+        {/* 갤러리 안전 모드 & 경고 알림 */}
+        <div className="max-w-md mx-auto flex flex-col items-center space-y-3">
+          <div className="flex items-center space-x-3 bg-slate-900/60 backdrop-blur border border-slate-800 px-4 py-2 rounded-2xl shadow-md">
+            <span className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+              🛡️ 갤러리 안전 모드 {safeMode ? '활성화 (pt 표시)' : '비활성화 (₩ 표시)'}
+            </span>
+            <button
+              onClick={() => setSafeMode(!safeMode)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                safeMode ? 'bg-emerald-600' : 'bg-slate-700'
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  safeMode ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+          
+          {!safeMode && (
+            <div className="w-full p-3 rounded-xl bg-red-950/20 border border-red-500/30 text-[10px] md:text-xs text-red-300 text-center animate-fade-in leading-relaxed">
+              ⚠️ <strong>경고:</strong> 현재 현실 체감 모드(₩)가 켜져 있어 현실 화폐 단위가 표시됩니다.<br />
+              이 상태로 화면을 캡처하여 메이플랜드 갤러리에 업로드 시, <strong>쌀먹/현거래 관련 규정 위반으로 글 삭제 및 차단</strong> 조치될 수 있으니 공유 전 반드시 안전 모드를 켜주세요!
+            </div>
+          )}
         </div>
 
         {/* 게임 종류 선택 탭 (Segmented Control) */}
@@ -520,14 +598,14 @@ function App() {
             <div className="mb-4 p-3.5 rounded-xl bg-orange-950/30 border border-maple-500/20 text-[10px] md:text-xs text-orange-200 space-y-1 leading-relaxed">
               {gameType === 'live' ? (
                 <>
-                  <p>📌 <strong>환율 기준:</strong> 1억 메소 = 2,200원 고정 매핑</p>
+                  <p>📌 <strong>평가 지수 기준:</strong> {safeMode ? '1억 메소 = 2,200 pt 고정 매핑' : '1억 메소 = 2,200원 고정 매핑'}</p>
                   <p>🔥 <strong>국대 주식 TOP 3:</strong> 네이버 금융 코스피 시가총액 상위 3사 실시간 크롤링 연동</p>
                   <p>🐋 <strong>글로벌 코인 TOP 3:</strong> 글로벌 CoinGecko 암호화폐 시가총액 상위 3사 및 업비트 실가격 매핑</p>
                   <p>🏢 <strong>부동산/자동차:</strong> 국토부 실거래 총액 및 최근 대표 시세 기준</p>
                 </>
               ) : (
                 <>
-                  <p>📌 <strong>환율 기준:</strong> 1,000만 메소 = 1,800원 고정 매핑</p>
+                  <p>📌 <strong>평가 지수 기준:</strong> {safeMode ? '1,000만 메소 = 1,800 pt 고정 매핑' : '1,000만 메소 = 1,800원 고정 매핑'}</p>
                   <p>🔥 <strong>국대 주식 TOP 3:</strong> 네이버 금융 코스피 시가총액 상위 3사 실시간 크롤링 연동</p>
                   <p>🐋 <strong>글로벌 코인 TOP 3:</strong> 글로벌 CoinGecko 암호화폐 시가총액 상위 3사 및 업비트 실가격 매핑</p>
                   <p>🏢 <strong>부동산/자동차:</strong> 국토부 실거래 총액 및 최근 대표 시세 기준</p>
@@ -562,7 +640,7 @@ function App() {
                       marketType === 'city' ? 'text-white bg-slate-800 border border-slate-700' : 'text-slate-500 hover:text-slate-300'
                     }`}
                   >
-                    🏙️ 도시 서버 (1,600원)
+                    🏙️ {safeMode ? '도시 서버 (1,600 pt)' : '도시 서버 (1,600원)'}
                   </button>
                   <button
                     onClick={() => handleMarketTypeChange('rural')}
@@ -570,7 +648,7 @@ function App() {
                       marketType === 'rural' ? 'text-white bg-slate-800 border border-slate-700' : 'text-slate-500 hover:text-slate-300'
                     }`}
                   >
-                    🏞️ 외곽 서버 (1,850원)
+                    🏞️ {safeMode ? '외곽 서버 (1,850 pt)' : '외곽 서버 (1,850원)'}
                   </button>
                   <button
                     onClick={() => handleMarketTypeChange('market')}
@@ -578,7 +656,7 @@ function App() {
                       marketType === 'market' ? 'text-white bg-slate-800 border border-slate-700' : 'text-slate-500 hover:text-slate-300'
                     }`}
                   >
-                    💳 메소마켓 (2,200원)
+                    💳 {safeMode ? '메소마켓 (2,200 pt)' : '메소마켓 (2,200원)'}
                   </button>
                 </div>
               </div>
@@ -663,7 +741,7 @@ function App() {
               ) : (
                 <>
                   <ArrowRightLeft size={18} />
-                  실시간 현실 자산 환전하기
+                  {safeMode ? '실시간 자산 지수 평가하기' : '실시간 현실 자산 환전하기'}
                 </>
               )}
             </button>
@@ -676,7 +754,7 @@ function App() {
           <div className="flex items-center gap-2.5">
             <span className="text-[10px] px-1.5 py-0.5 bg-orange-500/10 text-orange-400 border border-orange-500/20 rounded font-semibold tracking-wider">SPONSOR</span>
             <div className="text-[11px] text-slate-300 font-medium">
-              🍁 <span className="text-maple-400 font-bold">이 자리에 광고를 달고 쌀먹하세요!</span> (트래픽 광고 구좌 대여 중)
+              🍁 <span className="text-maple-400 font-bold">{safeMode ? '이 자리에 광고를 게재해 물약값을 지원받으세요!' : '이 자리에 광고를 달고 쌀먹하세요!'}</span> (트래픽 광고 구좌 대여 중)
             </div>
           </div>
           <a 
@@ -715,8 +793,12 @@ function App() {
               
               {/* 영수증 상단 바코드 데코레이션 */}
               <div className="flex flex-col items-center border-b border-dashed border-slate-800 pb-5">
-                <span className="text-[10px] text-maple-400 font-mono tracking-widest font-bold font-sans">🍁 MAPLELAND FINANCIAL EXCHANGE 🍁</span>
-                <div className="text-3xl font-black text-white tracking-widest my-1.5 font-sans">RECEIPT</div>
+                <span className="text-[10px] text-maple-400 font-mono tracking-widest font-bold font-sans">
+                  {safeMode ? '🍁 MAPLELAND ASSET REGISTRY 🍁' : '🍁 MAPLELAND FINANCIAL EXCHANGE 🍁'}
+                </span>
+                <div className="text-3xl font-black text-white tracking-widest my-1.5 font-sans">
+                  {safeMode ? 'REGISTRY RECORD' : 'RECEIPT'}
+                </div>
                 <div className="w-48 h-8 opacity-50 my-1 bg-gradient-to-r from-transparent via-slate-400 to-transparent flex justify-center items-center text-[8px] tracking-[5px] text-slate-900 font-black">
                   ||||| | ||| || ||||| | ||
                 </div>
@@ -726,11 +808,13 @@ function App() {
               {/* 총 가치 및 칭호 */}
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900/40 p-4 md:p-5 rounded-xl border border-slate-800/80">
                 <div>
-                  <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">현실 원화 환산 가치</span>
+                  <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider">
+                    {safeMode ? '모의 현실 자산 지수' : '현실 원화 환산 가치'}
+                  </span>
                   <div className="text-3xl md:text-4xl font-extrabold text-white mt-0.5 flex items-baseline gap-1">
-                    <span className="text-xl text-slate-450 font-normal">₩</span>
+                    {!safeMode && <span className="text-xl text-slate-450 font-normal">₩</span>}
                     {result.krw.toLocaleString()}
-                    <span className="text-sm text-slate-450 font-normal">원</span>
+                    <span className="text-sm text-slate-450 font-normal">{safeMode ? ' pt' : ' 원'}</span>
                   </div>
                 </div>
 
@@ -775,7 +859,7 @@ function App() {
                               )}
                             </div>
                             <div className="text-[9px] text-slate-500 leading-relaxed">
-                              시세: {stock.price.toLocaleString()}원 <br />
+                              시세: {stock.price.toLocaleString()}{safeMode ? ' pt' : '원'} <br />
                               시총: {formatMarketCap(stock.market_cap)}
                             </div>
                           </div>
@@ -820,7 +904,7 @@ function App() {
                               )}
                             </div>
                             <div className="text-[9px] text-slate-500 leading-relaxed">
-                              시세: {coin.price.toLocaleString()}원 <br />
+                              시세: {coin.price.toLocaleString()}{safeMode ? ' pt' : '원'} <br />
                               시총: {formatMarketCap(coin.market_cap)}
                             </div>
                           </div>
@@ -986,7 +1070,7 @@ function App() {
                 ) : (
                   <>
                     <Download size={16} />
-                    내 메랜 영수증 저장 (.PNG)
+                    {safeMode ? '내 메랜 등기부등본 저장 (.PNG)' : '내 메랜 영수증 저장 (.PNG)'}
                   </>
                 )}
               </button>
@@ -1023,7 +1107,9 @@ function App() {
                 <div>
                   <h4 className="text-sm font-bold text-white flex items-center gap-1.5">
                     개발자 물약값(커피) 후원하기
-                    <span className="text-[9px] bg-maple-500/10 text-maple-400 border border-maple-500/20 px-1.5 py-0.2 rounded">쌀먹 지원</span>
+                    <span className="text-[9px] bg-maple-500/10 text-maple-400 border border-maple-500/20 px-1.5 py-0.2 rounded">
+                      {safeMode ? '개발 지원' : '쌀먹 지원'}
+                    </span>
                   </h4>
                   <p className="text-[10px] md:text-xs text-slate-450 mt-1 leading-relaxed">
                     재미있게 사용하셨나요? 계좌번호를 클릭해 복사한 후 토스/카카오톡 송금으로 서버 유지비를 후원하실 수 있습니다.
@@ -1057,7 +1143,7 @@ function App() {
           <div>
             <div className="text-[11px] text-slate-400 font-bold font-sans">🍁 ADVERTISING SPACE</div>
             <p className="text-[9px] text-slate-550 mt-0.5">
-              메이플랜드 쌀먹 및 장사 매크로 방지 관련 배너 스폰서를 받습니다.
+              {safeMode ? '메이플랜드 물약값 지원 및 유저 권익 보호 관련 배너 스폰서를 받습니다.' : '메이플랜드 쌀먹 및 장사 매크로 방지 관련 배너 스폰서를 받습니다.'}
             </p>
           </div>
           <a 
@@ -1074,7 +1160,7 @@ function App() {
       {/* 푸터 */}
       <footer className="w-full py-6 px-4 text-center border-t border-slate-850 bg-slate-950/40 text-slate-600 text-[10px] z-10">
         <p className="max-w-md mx-auto leading-relaxed font-sans">
-          본 환전소는 놀이용 시뮬레이터입니다. 실시간 랭킹 정보는 네이버 금융 코스피 시가총액 및 글로벌 암호화폐 시가총액 데이터를 따르며, 부동산/자동차 가격은 국토부 실거래 등을 참조합니다.
+          {safeMode ? '본 등기소는 놀이용 시뮬레이터입니다. 실시간 랭킹 정보는 네이버 금융 코스피 시가총액 및 글로벌 암호화폐 시가총액 데이터를 따르며, 부동산/자동차 가격은 국토부 실거래 등을 참조합니다.' : '본 환전소는 놀이용 시뮬레이터입니다. 실시간 랭킹 정보는 네이버 금융 코스피 시가총액 및 글로벌 암호화폐 시가총액 데이터를 따르며, 부동산/자동차 가격은 국토부 실거래 등을 참조합니다.'}
         </p>
       </footer>
 
