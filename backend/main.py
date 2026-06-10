@@ -379,7 +379,7 @@ class ExchangeResponse(BaseModel):
     coins: list[CoinItem]
     apartments: dict[str, ApartmentDetail]
     cars: dict[str, CarDetail]
-    jajangmyeon_qty: float
+    chicken_qty: float
     tier_name: str
     tier_desc: str
 
@@ -521,8 +521,8 @@ def exchange_meso_get(
             comment=comment
         )
         
-    # 6. 생활 밀착형 짜장면
-    jajangmyeon_qty = krw / 7000.0
+    # 6. 생활 밀착형 치킨 환산 (1마리 20,000원 기준)
+    chicken_qty = krw / 20000.0
     
     tier_name, tier_desc = get_tier_info(meso, game_type)
     
@@ -533,7 +533,7 @@ def exchange_meso_get(
         coins=coins_result,
         apartments=apartments_result,
         cars=cars_result,
-        jajangmyeon_qty=round(jajangmyeon_qty, 2),
+        chicken_qty=round(chicken_qty, 2),
         tier_name=tier_name,
         tier_desc=tier_desc
     )

@@ -473,7 +473,7 @@ function App() {
 👉 획득 상태: ${carDetail.qty}대 분량
 👉 상태: ${carDetail.comment}
 
-🍜 보너스: 평생 짜장면 ${formatNumber(result.jajangmyeon_qty)}그릇 섭취 지수 도달!
+🍗 보너스: 평생 치킨 ${formatNumber(result.chicken_qty)}마리 든든하게 뜯기 가능!
 👉 나도 방구석 등기 치러 가기: ${pageUrl}` : `🍁 방구석 자산 환전소 인증 (${gameType === 'live' ? `메이플 본섭 - ${getMarketName(marketType)}` : '메이플랜드'}) 🍁
 
 💰 보유 메소: ${formatMesoKorean(result.meso)}
@@ -488,7 +488,7 @@ function App() {
 👉 획득 상태: ${carDetail.qty}대 분량
 👉 상태: ${carDetail.comment}
 
-🍜 보너스: 평생 짜장면 ${formatNumber(result.jajangmyeon_qty)}그릇 섭취 지수 도달!
+🍗 보너스: 평생 치킨 ${formatNumber(result.chicken_qty)}마리 야식 지수 도달!
 👉 나도 방구석 자산 환전하러 가기: ${pageUrl}`
 
     navigator.clipboard.writeText(text)
@@ -1141,8 +1141,8 @@ function App() {
               </div>
 
               {/* 생활형 식음료 한줄 요약 데코레이션 */}
-              <div className="p-3 bg-red-950/10 border border-red-500/10 rounded-xl text-center text-[10px] text-red-300">
-                🍜 <strong>뽀나스 환산:</strong> 하루 세끼 짜장면만 조진다면 약 <strong>{result.jajangmyeon_qty.toLocaleString()} 그릇</strong>으로 <strong>{Math.floor(result.jajangmyeon_qty / 3).toLocaleString()}일</strong> 동안 생존 연명 가능!
+              <div className="p-3 bg-amber-950/10 border border-amber-500/15 rounded-xl text-center text-[10px] text-amber-300">
+                🍗 <strong>치킨 지수 환산:</strong> 하루에 1마리씩 황금올리브 치킨을 뜯는다면 약 <strong>{result.chicken_qty.toLocaleString()}일</strong> 동안 야식 걱정 없이 포만감을 유지할 수 있습니다!
               </div>
 
               {/* 영수증 하단 */}
