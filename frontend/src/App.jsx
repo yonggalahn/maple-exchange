@@ -405,10 +405,10 @@ function App() {
       return '도시 서버 시황'
     }
     
-    const text = `🍁 방구석 자산 환전소 영수증 인증 (${gameType === 'live' ? `메이플 본섭 - ${getMarketName(marketType)}` : '메이플랜드'}) 🍁
+    const text = `🍁 방구석 자산 모의 등기소 인증 (${gameType === 'live' ? `메이플 본섭 - ${getMarketName(marketType)}` : '메이플랜드'}) 🍁
 
 💰 보유 메소: ${formatMesoKorean(result.meso)}
-💵 현실 원화 환산 가치: ₩${result.krw.toLocaleString()}원
+💵 모의 현실 환산 지수: ${result.krw.toLocaleString()}pt
 🎖️ 방구석 자산 등급: [${result.tier_name}]
 
 🏢 부동산 (${aptDetail.name}):
@@ -419,8 +419,8 @@ function App() {
 👉 획득 상태: ${carDetail.qty}대 분량
 👉 상태: ${carDetail.comment}
 
-🍜 보너스: 평생 짜장면 ${formatNumber(result.jajangmyeon_qty)}그릇 시식 가능!
-👉 나도 메랜 쌀먹하러 가기: ${pageUrl}`
+🍜 보너스: 평생 짜장면 ${formatNumber(result.jajangmyeon_qty)}그릇 섭취 지수 도달!
+👉 나도 방구석 등기 치러 가기: ${pageUrl}`
 
     navigator.clipboard.writeText(text)
     setCommunityCopied(true)
