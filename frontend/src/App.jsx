@@ -18,6 +18,7 @@ import html2canvas from 'html2canvas'
 
 // 카카오 Javascript 앱 키 (Vite 환경 변수 연동, 미등록 시 가상 키 활용 폴백 작동)
 const KAKAO_JS_KEY = import.meta.env.VITE_KAKAO_JS_KEY || 'YOUR_KAKAO_JS_KEY'
+const VITE_TOSS_ID = import.meta.env.VITE_TOSS_ID || ''
 
 function App() {
   const [mesoInput, setMesoInput] = useState('100000000') // 기본 1억 메소
@@ -34,6 +35,7 @@ function App() {
   
   // 바이럴 공유 상태관리
   const [copied, setCopied] = useState(false)
+  const [communityCopied, setCommunityCopied] = useState(false)
   const [kakaoShared, setKakaoShared] = useState(false)
   const [savingReceipt, setSavingReceipt] = useState(false)
   const [kakaoCopiedText, setKakaoCopiedText] = useState('')
@@ -346,6 +348,38 @@ function App() {
     }, 4500)
   }
 
+  // 커뮤니티(디시, 아카, 인벤) 자랑용 템플릿 복사
+  const handleCopyCommunityText = () => {
+    if (!result) return
+    
+    const pageUrl = window.location.origin + window.location.pathname
+    const formatNumber = (num) => Math.floor(num).toLocaleString()
+    
+    const aptDetail = result.apartments[activeAptTab]
+    const carDetail = result.cars[activeCarTab]
+    
+    const text = `🍁 방구석 자산 환전소 영수증 인증 🍁
+
+💰 보유 메소: ${formatMesoKorean(result.meso)}
+💵 현실 원화 환산 가치: ₩${result.krw.toLocaleString()}원
+🎖️ 방구석 자산 등급: [${result.tier_name}]
+
+🏢 부동산 (${aptDetail.name}):
+👉 소유 면적: ${aptDetail.pyeong}평 (${aptDetail.m2}㎡)
+👉 상태: ${aptDetail.comment}
+
+🚗 자동차 (${carDetail.name}):
+👉 획득 상태: ${carDetail.qty}대 분량
+👉 상태: ${carDetail.comment}
+
+🍜 보너스: 평생 짜장면 ${formatNumber(result.jajangmyeon_qty)}그릇 시식 가능!
+👉 나도 메란다 쌀먹하러 가기: ${pageUrl}`
+
+    navigator.clipboard.writeText(text)
+    setCommunityCopied(true)
+    setTimeout(() => setCommunityCopied(false), 2000)
+  }
+
   return (
     <div className="relative min-h-screen grid-overlay flex flex-col justify-between">
       
@@ -483,6 +517,25 @@ function App() {
               )}
             </button>
           </div>
+        </div>
+
+        {/* 상단 슬림 네온 광고 배너 (수익화 1) */}
+        <div className="w-full py-3.5 px-4 rounded-xl border border-slate-800 bg-slate-950/60 backdrop-blur-sm flex flex-col sm:flex-row justify-between items-center gap-3 relative overflow-hidden group">
+          <div className="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-maple-500 to-orange-500"></div>
+          <div className="flex items-center gap-2.5">
+            <span className="text-[10px] px-1.5 py-0.5 bg-orange-500/10 text-orange-400 border border-orange-500/20 rounded font-semibold tracking-wider">SPONSOR</span>
+            <div className="text-[11px] text-slate-300 font-medium">
+              🍁 <span className="text-maple-400 font-bold">이 자리에 광고를 달고 쌀먹하세요!</span> (트래픽 광고 구좌 대여 중)
+            </div>
+          </div>
+          <a 
+            href={`https://toss.me/${VITE_TOSS_ID || 'yonggalahn'}`} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="text-[10px] text-slate-400 hover:text-white transition-colors border border-slate-700 hover:border-slate-500 px-3 py-1 rounded bg-slate-900/40"
+          >
+            스폰서 문의하기 &rarr;
+          </a>
         </div>
 
         {error && (
@@ -802,11 +855,63 @@ function App() {
                 <Share2 size={16} />
                 카카오톡 공유
               </button>
+
+              <button
+                onClick={handleCopyCommunityText}
+                className="py-3 px-4 bg-blue-650 hover:bg-blue-500 text-white font-bold rounded-xl transition-all active:scale-95 flex items-center justify-center gap-2 text-sm"
+              >
+                {communityCopied ? <Check size={16} /> : <Share2 size={16} />}
+                {communityCopied ? '복사 완료!' : '디시/아카 자랑용 복사'}
+              </button>
+            </div>
+
+            {/* 후원 컴포넌트 */}
+            <div className="glass-panel p-5 rounded-2xl border border-slate-800 bg-slate-900/10 shadow-xl flex flex-col md:flex-row justify-between items-center gap-4">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl md:text-3xl">☕</span>
+                <div>
+                  <h4 className="text-sm font-bold text-white flex items-center gap-1.5">
+                    개발자 물약값(커피) 후원하기
+                    <span className="text-[9px] bg-maple-500/10 text-maple-400 border border-maple-500/20 px-1.5 py-0.2 rounded">쌀먹 지원</span>
+                  </h4>
+                  <p className="text-[10px] md:text-xs text-slate-450 mt-1 leading-relaxed">
+                    재미있게 사용하셨나요? 커피 한 잔 후원으로 서버 유지비와 물약값 쌀먹을 도와주세요!
+                  </p>
+                </div>
+              </div>
+              <a
+                href={VITE_TOSS_ID ? `https://toss.me/${VITE_TOSS_ID}` : 'https://toss.me/yonggalahn'}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full md:w-auto px-5 py-2.5 bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 text-white font-bold rounded-xl transition-all text-center text-xs md:text-sm shadow-md active:scale-98 flex items-center justify-center gap-1.5"
+              >
+                🍁 토스로 물약값 후원하기 &rarr;
+              </a>
             </div>
 
           </div>
         )}
       </main>
+
+      {/* 하단 슬림형 네온 광고판 (수익화 2) */}
+      <div className="max-w-4xl w-full mx-auto px-4 mb-4">
+        <div className="w-full py-4 px-5 rounded-xl border border-dashed border-slate-800 bg-slate-950/20 flex flex-col sm:flex-row justify-between items-center gap-4 text-center sm:text-left">
+          <div>
+            <div className="text-[11px] text-slate-400 font-bold font-sans">🍁 ADVERTISING SPACE</div>
+            <p className="text-[9px] text-slate-550 mt-0.5">
+              메이플랜드 쌀먹 및 장사 매크로 방지 관련 배너 스폰서를 받습니다.
+            </p>
+          </div>
+          <a 
+            href={`https://toss.me/${VITE_TOSS_ID || 'yonggalahn'}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[9px] text-orange-400 hover:text-orange-300 font-semibold border border-orange-500/30 hover:border-orange-500/60 rounded px-2.5 py-1 transition-all"
+          >
+            스폰서 등록 문의 &rarr;
+          </a>
+        </div>
+      </div>
 
       {/* 푸터 */}
       <footer className="w-full py-6 px-4 text-center border-t border-slate-850 bg-slate-950/40 text-slate-600 text-[10px] z-10">
