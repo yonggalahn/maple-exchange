@@ -154,7 +154,27 @@ def get_top_3_coins() -> list[dict]:
                         "tag": "🐋고래픽" if rank == 1 else ""
                     })
                     rank += 1
-                    if ra# 환율 매핑 정보 (메이플랜드: 1,000만 메소 = 1,800원)
+                    if rank > 3:
+                        break
+            if len(top_3) == 3:
+                return top_3
+            raise ValueError("코인 시총 매핑 데이터 부족")
+            
+    except Exception as e:
+        print(f"[코인 시총 랭킹] API 오류로 폴백 적용: {e}")
+        # 폴백: 비트코인(BTC, 시총 ~1800조), 이더리움(ETH, 시총 ~500조), 솔라나(SOL, 시총 ~100조)
+        prices = {
+            "BTC": get_upbit_ticker_price("BTC", 95000000.0),
+            "ETH": get_upbit_ticker_price("ETH", 4800000.0),
+            "SOL": get_upbit_ticker_price("SOL", 250000.0)
+        }
+        return [
+            {"rank": 1, "name": "비트코인", "symbol": "BTC", "price": prices["BTC"], "market_cap": 1800000000000000.0, "tag": "🐋고래픽"},
+            {"rank": 2, "name": "이더리움", "symbol": "ETH", "price": prices["ETH"], "market_cap": 500000000000000.0, "tag": ""},
+            {"rank": 3, "name": "솔라나", "symbol": "SOL", "price": prices["SOL"], "market_cap": 100000000000000.0, "tag": ""}
+        ]
+
+# 환율 매핑 정보 (메이플랜드: 1,000만 메소 = 1,800원)
 MESO_RATE_UNIT = 10000000
 KRW_RATE_UNIT = 1800
 
