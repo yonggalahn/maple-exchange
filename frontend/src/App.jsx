@@ -34,6 +34,9 @@ function App() {
   // 자동차 3종 세트 탭 상태관리 (avante, g80, ferrari)
   const [activeCarTab, setActiveCarTab] = useState('avante')
   
+  // 게임 버전 선택 상태관리 ('mapleland' | 'live')
+  const [gameType, setGameType] = useState('mapleland')
+  
   // 바이럴 공유 상태관리
   const [copied, setCopied] = useState(false)
   const [communityCopied, setCommunityCopied] = useState(false)
@@ -54,19 +57,20 @@ function App() {
   }, [])
 
   // 자산 계산 실행 함수
-  const handleCalculate = async (valueToSubmit) => {
+  const handleCalculate = async (valueToSubmit, forceGameType) => {
     setLoading(true)
     setError(null)
     
     const targetMeso = valueToSubmit || mesoInput
+    const targetGameType = forceGameType || gameType
     
     try {
       let response;
       try {
-        response = await fetch(`/api/exchange?meso=${targetMeso}`)
+        response = await fetch(`/api/exchange?meso=${targetMeso}&game_type=${targetGameType}`)
       } catch (proxyErr) {
         console.warn('Vite 프록시 연결 실패, 백엔드 절대 경로로 재시도합니다.', proxyErr)
-        response = await fetch(`http://localhost:8000/api/exchange?meso=${targetMeso}`)
+        response = await fetch(`http://localhost:8000/api/exchange?meso=${targetMeso}&game_type=${targetGameType}`)
       }
 
       if (!response.ok) {
@@ -83,9 +87,15 @@ function App() {
     }
   }
 
+  // 게임 타입 변경 핸들러
+  const handleGameTypeChange = (type) => {
+    setGameType(type)
+    handleCalculate(null, type)
+  }
+
   // 초기 로드 시 실행
   useEffect(() => {
-    handleCalculate('100000000')
+    handleCalculate('100000000', 'mapleland')
   }, [])
 
   // 메소 입력 포맷팅
@@ -379,7 +389,7 @@ function App() {
     const aptDetail = result.apartments[activeAptTab]
     const carDetail = result.cars[activeCarTab]
     
-    const text = `🍁 방구석 자산 환전소 영수증 인증 🍁
+    const text = `🍁 방구석 자산 환전소 영수증 인증 (${gameType === 'live' ? '메이플 본섭' : '메이플랜드'}) 🍁
 
 💰 보유 메소: ${formatMesoKorean(result.meso)}
 💵 현실 원화 환산 가치: ₩${result.krw.toLocaleString()}원
@@ -450,6 +460,26 @@ function App() {
           </p>
         </div>
 
+        {/* 게임 종류 선택 탭 (Segmented Control) */}
+        <div className="max-w-xs mx-auto p-1 rounded-xl bg-slate-950 border border-slate-850 flex relative">
+          <button
+            onClick={() => handleGameTypeChange('mapleland')}
+            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all z-10 flex items-center justify-center gap-1.5 ${
+              gameType === 'mapleland' ? 'text-white bg-maple-600/90 shadow' : 'text-slate-450 hover:text-slate-200'
+            }`}
+          >
+            🍁 메이플랜드
+          </button>
+          <button
+            onClick={() => handleGameTypeChange('live')}
+            className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all z-10 flex items-center justify-center gap-1.5 ${
+              gameType === 'live' ? 'text-white bg-orange-600/90 shadow' : 'text-slate-450 hover:text-slate-200'
+            }`}
+          >
+            🌟 메이플 본섭
+          </button>
+        </div>
+
         {/* 입력 카드 */}
         <div className="glass-panel rounded-2xl md:rounded-3xl p-5 md:p-8 shadow-2xl glow-card">
           
@@ -472,10 +502,21 @@ function App() {
           {/* 시세 안내 툴팁 */}
           {showTooltip && (
             <div className="mb-4 p-3.5 rounded-xl bg-orange-950/30 border border-maple-500/20 text-[10px] md:text-xs text-orange-200 space-y-1 leading-relaxed">
-              <p>📌 <strong>환율 기준:</strong> 1,000만 메소 = 1,800원 고정 매핑</p>
-              <p>🔥 <strong>국대 주식 TOP 3:</strong> 네이버 금융 코스피 시가총액 상위 3사 실시간 크롤링 연동</p>
-              <p>🐋 <strong>글로벌 코인 TOP 3:</strong> 글로벌 CoinGecko 암호화폐 시가총액 상위 3사 및 업비트 실가격 매핑</p>
-              <p>🏢 <strong>부동산/자동차:</strong> 국토부 실거래 총액 및 최근 대표 시세 기준</p>
+              {gameType === 'live' ? (
+                <>
+                  <p>📌 <strong>환율 기준:</strong> 1억 메소 = 2,200원 고정 매핑</p>
+                  <p>🔥 <strong>국대 주식 TOP 3:</strong> 네이버 금융 코스피 시가총액 상위 3사 실시간 크롤링 연동</p>
+                  <p>🐋 <strong>글로벌 코인 TOP 3:</strong> 글로벌 CoinGecko 암호화폐 시가총액 상위 3사 및 업비트 실가격 매핑</p>
+                  <p>🏢 <strong>부동산/자동차:</strong> 국토부 실거래 총액 및 최근 대표 시세 기준</p>
+                </>
+              ) : (
+                <>
+                  <p>📌 <strong>환율 기준:</strong> 1,000만 메소 = 1,800원 고정 매핑</p>
+                  <p>🔥 <strong>국대 주식 TOP 3:</strong> 네이버 금융 코스피 시가총액 상위 3사 실시간 크롤링 연동</p>
+                  <p>🐋 <strong>글로벌 코인 TOP 3:</strong> 글로벌 CoinGecko 암호화폐 시가총액 상위 3사 및 업비트 실가격 매핑</p>
+                  <p>🏢 <strong>부동산/자동차:</strong> 국토부 실거래 총액 및 최근 대표 시세 기준</p>
+                </>
+              )}
             </div>
           )}
 
@@ -494,30 +535,61 @@ function App() {
 
             {/* 빠른 입력 단추 */}
             <div className="flex flex-wrap gap-1.5 text-xs">
-              <button
-                onClick={() => handleAddMeso(10000000)}
-                className="px-2.5 py-1 bg-slate-800 hover:bg-slate-750 text-slate-200 rounded-lg border border-slate-700 transition-colors"
-              >
-                +1,000만
-              </button>
-              <button
-                onClick={() => handleAddMeso(100000000)}
-                className="px-2.5 py-1 bg-slate-800 hover:bg-slate-750 text-slate-200 rounded-lg border border-slate-700 transition-colors"
-              >
-                +1억
-              </button>
-              <button
-                onClick={() => handleAddMeso(1000000000)}
-                className="px-2.5 py-1 bg-slate-800 hover:bg-slate-750 text-slate-200 rounded-lg border border-slate-700 transition-colors"
-              >
-                +10억
-              </button>
-              <button
-                onClick={() => handleAddMeso(-100000000)}
-                className="px-2.5 py-1 bg-slate-800 hover:bg-red-950/30 text-slate-400 rounded-lg border border-slate-700 transition-colors"
-              >
-                -1억
-              </button>
+              {gameType === 'live' ? (
+                <>
+                  <button
+                    onClick={() => handleAddMeso(100000000)}
+                    className="px-2.5 py-1 bg-slate-800 hover:bg-slate-750 text-slate-200 rounded-lg border border-slate-700 transition-colors"
+                  >
+                    +1억
+                  </button>
+                  <button
+                    onClick={() => handleAddMeso(1000000000)}
+                    className="px-2.5 py-1 bg-slate-800 hover:bg-slate-750 text-slate-200 rounded-lg border border-slate-700 transition-colors"
+                  >
+                    +10억
+                  </button>
+                  <button
+                    onClick={() => handleAddMeso(10000000000)}
+                    className="px-2.5 py-1 bg-slate-800 hover:bg-slate-750 text-slate-200 rounded-lg border border-slate-700 transition-colors"
+                  >
+                    +100억
+                  </button>
+                  <button
+                    onClick={() => handleAddMeso(-1000000000)}
+                    className="px-2.5 py-1 bg-slate-800 hover:bg-red-950/30 text-slate-400 rounded-lg border border-slate-700 transition-colors"
+                  >
+                    -10억
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button
+                    onClick={() => handleAddMeso(10000000)}
+                    className="px-2.5 py-1 bg-slate-800 hover:bg-slate-750 text-slate-200 rounded-lg border border-slate-700 transition-colors"
+                  >
+                    +1,000만
+                  </button>
+                  <button
+                    onClick={() => handleAddMeso(100000000)}
+                    className="px-2.5 py-1 bg-slate-800 hover:bg-slate-750 text-slate-200 rounded-lg border border-slate-700 transition-colors"
+                  >
+                    +1억
+                  </button>
+                  <button
+                    onClick={() => handleAddMeso(1000000000)}
+                    className="px-2.5 py-1 bg-slate-800 hover:bg-slate-750 text-slate-200 rounded-lg border border-slate-700 transition-colors"
+                  >
+                    +10억
+                  </button>
+                  <button
+                    onClick={() => handleAddMeso(-100000000)}
+                    className="px-2.5 py-1 bg-slate-800 hover:bg-red-950/30 text-slate-400 rounded-lg border border-slate-700 transition-colors"
+                  >
+                    -1억
+                  </button>
+                </>
+              )}
               <button
                 onClick={handleClear}
                 className="px-2.5 py-1 bg-slate-900 hover:bg-slate-850 text-slate-500 rounded-lg border border-slate-800 ml-auto transition-colors"
