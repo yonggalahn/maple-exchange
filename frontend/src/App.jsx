@@ -420,7 +420,7 @@ function App() {
 👉 상태: ${carDetail.comment}
 
 🍜 보너스: 평생 짜장면 ${formatNumber(result.jajangmyeon_qty)}그릇 시식 가능!
-👉 나도 메란다 쌀먹하러 가기: ${pageUrl}`
+👉 나도 메랜 쌀먹하러 가기: ${pageUrl}`
 
     navigator.clipboard.writeText(text)
     setCommunityCopied(true)
@@ -986,7 +986,7 @@ function App() {
                 ) : (
                   <>
                     <Download size={16} />
-                    내 메란다 영수증 저장 (.PNG)
+                    내 메랜 영수증 저장 (.PNG)
                   </>
                 )}
               </button>
